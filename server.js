@@ -27,7 +27,8 @@ var comment_template = _.template("[<%= pull_request.user.login %>](<%= pull_req
         "<%= pull_request.additions %>++/<%= pull_request.deletions %>--");
 
 app.post('/github-hook', function(req,res){
-
+  //issues, pull_request, issue_comment
+  
   if(req.headers['x-github-event'] === 'ping'){
     console.log('Received ping from github');
     res.end("OK");
