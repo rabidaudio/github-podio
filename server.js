@@ -53,20 +53,22 @@ app.post('/github-hook', function(req, res){
         if(results.filtered<=0){
           res.status(204).end("Couldn't find an item with the appropriate tag.");
         }else{
+          var commentIds = [];
           _.each(results.items, function(item){
-            podio.request('POST', "/comment/item/"+item.item_id, {
+            podio.request('POST', "/comment/item/?silent=false"+item.item_id, {
               value: comment,
               external_id: req.headers['x-github-delivery'],
               embed_url: req.body.pull_request.html_url
             }).then(function(responseData){
-              console.log("comment added: "+responseData);
-              res.end(responseData.comment_id);
-            }).catch(function(errBody){
-              res.status(500).json(errBody);
+              console.log("comment added: ", responseData);
+              commentIds.push(responseData.comment_id);
+            }, function(errBody){
+              res.status(500).json(errBody || {error: "An unknown error occured."});
             });
           });
+          res.json(commentIds);
         }
-      }).catch(function(err){
+      }, function(err){
         res.status(500).json(err);
       });
     }
@@ -83,7 +85,7 @@ app.get('/', function(req, res){
 
 
 
-podio.isAuthenticated().then(start).catch(function(err) {
+podio.isAuthenticated().then(start, function(err) {
     podio.authenticateWithApp(process.env.APP_ID, process.env.APP_TOKEN, start).catch(function(){
       throw "unable to authenticate with podio: "+err;
     });
