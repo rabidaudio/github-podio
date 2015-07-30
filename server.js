@@ -10,11 +10,20 @@ attach github repository => podio deliverable
 future: connect github users to podio accounts
 
 */
+require('with-env')(); //include environment variables from .env on development
 
 var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('lodash');
+var Podio = require('podio-js').api;
+var Datastore = require('nedb');
+
 var app = express();
+var podio = new Podio({
+  authType: 'app',
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET
+});
 
 app.use(bodyParser.json());
 
@@ -25,6 +34,7 @@ var comment_template = _.template("[<%= pull_request.user.login %>](<%= pull_req
       "> commits: <%= pull_request.commits %>, "+
         "changed files: <%= pull_request.changed_files %>, "+
         "<%= pull_request.additions %>++/<%= pull_request.deletions %>--");
+
 
 app.post('/github-hook', function(req,res){
   //issues, pull_request, issue_comment
@@ -37,10 +47,17 @@ app.post('/github-hook', function(req,res){
     if(req.body.action === "opened"){
       var comment = comment_template(req.body);
       console.log(comment);
+      // podio.request('POST',  "/comment/{type}/{id}/", {
+      //   value: comment,
+      //   external_id: req.headers['x-github-delivery'],
+
+      // }).then(function(responseData){
+      //   console.log("comment added: "+responseData.comment_id, responseData.ref);
+      //   res.end(responseData.comment_id);
+      // }).catch(function(errBody){
+      //   res.status(500).json(errBody);
+      // });
     }
-
-    res.end("OK");
-
   }else{
     res.status(400).end('This service only listends to pull requests.');
   }
@@ -50,4 +67,14 @@ app.get('/', function(req, res){
   res.end("Hello, world!");
 });
 
-app.listen(process.env.PORT || 8000);
+
+podio.isAuthenticated().then(start).catch(function(err) {
+    podio.authenticateWithApp(process.env.APP_ID, process.env.APP_TOKEN, start).catch(function(){
+      throw "unable to authenticate with podio: "+err;
+    });
+});
+
+function start () {
+  app.listen(process.env.PORT || 5000);
+  console.log("Server running");
+}
