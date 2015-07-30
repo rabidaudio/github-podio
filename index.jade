@@ -1,0 +1,77 @@
+doctype html
+html(lang="en")
+  head
+    title Post Github updates to Podio
+    script(src="//code.jquery.com/jquery-2.1.4.min.js")
+    script(type="text/javascript").
+      /* Scroll to top */
+      /* https://gist.github.com/rabidaudio/22ef920b682487f16ead */
+      (function($){
+        $.fn.scrollTo = function(maxTime, callback){
+          if(typeof maxTime === "function"){
+            callback = maxTime;
+            maxTime = 2000;
+          }else if(!maxTime){
+            maxTime = 2000;
+          }
+          if(!callback){
+            callback = new Function();
+          }
+          
+          var dest_pos = $(this).offset().top;
+          var distance = dest_pos - $(document).scrollTop();//down is positive
+          var done = false;
+          $('body,html').animate({ scrollTop: dest_pos }, Math.min(maxTime, Math.abs(distance)), function(){
+            if(!done){
+              done = true;
+              callback.call(this);
+            }
+          });
+        };
+      })(jQuery);
+
+
+    script(type="text/javascript").
+      var trim = function(s){ return s.replace(/\s+$/,"").replace(/^\s+/,""); }
+      $(document).ready(function(){
+        $('#back_to_top').click(function(){
+          $('.top').scrollTo(500);
+        });
+
+        $('#generate').click(function(){
+          $.ajax({
+            method: 'POST',
+            url: '/add-hook',
+            dataType: 'json',
+            data: {
+              app_id: $('input[name=app_id]').val(),
+              token:  $('input[name=token]').val(),
+              tags:   $('input[name=tags]').val().split(",").map(trim),
+              silent: !!$('input[name=silent]').checked
+            }
+          }).then(function(data){
+            $('pre.result').text(data);
+          }, function(jqXHR, textStatus, error){
+            $('pre.result').text(error);
+          });
+        });
+      });
+
+  body
+    h1.top Get Hook
+    form
+      p Application ID
+      input(type="text" name="app_id")
+      p Application Token
+      input(type="text" name="token")
+      p Additional tags (comma separated)
+      input(type="text" name="tags")
+      p
+        input(type="checkbox" name="silent" checked=false)
+        | Silence notifications
+      input(type="button" value="Generate" id="generate")
+      pre.result
+
+    h1 Directions
+      include:marked README.md
+      input(type="button" value="Let's go!" id="back_to_top")

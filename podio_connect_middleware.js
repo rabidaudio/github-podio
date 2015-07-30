@@ -1,26 +1,24 @@
 
 var mongoose = require('mongoose');
 
+var url = require('url');
+
 mongoose.connect(process.env.MONGOLAB_URI);
 var Schema = mongoose.Schema, ObjectId = Schema.ObjectId;
 
 var PodioApp = mongoose.model('PodioApp', new Schema({
-  app_d: String,
+  app_id: String,
   token: String,
   tags: [String],
-  silent: { type: Boolean, default: false }
+  silent: { type: Boolean, default: false },
   timestamp: { type: Date, default: Date.now }
 }));
-
-PodioApp.prototype.get_url = function() {
-  return "/app/"+this._id+"/github-hook"; //TODO
-};
 
 module.exports = function(podio, app_id_key){
   return {
     databaseLookup: function(req, res, next){
-      console.log("middleware called");
       var app_id = req.params[app_id_key];
+      if(!app_id || !app_id.match(/$[a-f0-9]+^/)) next();
       
       PodioApp.findById(app_id, function(err, data){
         if(err){
@@ -52,7 +50,13 @@ module.exports = function(podio, app_id_key){
         if(err){
           res.status(400).json(err);
         }else{
-          res.end(hook.get_url());
+          console.log("added app:", hook);
+          res.json(url.format({
+            protocol: req.protocol,
+            hostname: req.hostname,
+            port: req.app.get('port'),
+            pathname: "/app/"+hook._id.toString()+"/github-hook"
+          }));
         }
       });
     }

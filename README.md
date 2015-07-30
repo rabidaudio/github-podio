@@ -1,37 +1,28 @@
+## Github => Podio
 
+To start, go to the App you want to post to on Podio, then "Settings" > "Developer".
 
-```js
-require('with-env')(); //include environment variables from .env on development
-var Podio = require('podio-js').api;
-var podio = new Podio({
-  authType: 'app',
-  clientId: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET
-});
+![app](images/1.png)
 
-function start(){
-  console.log("READY");
-}
+![developer](images/2.png)
 
+Copy the Application ID and Application Token and paste them below. On any Item in the application
+that you want to receive updates, add a tag to denote the repository to accept updates from.
 
-podio.isAuthenticated().then(start, function(err) {
-    podio.authenticateWithApp(process.env.APP_ID, process.env.APP_TOKEN, start).catch(function(){
-      throw "unable to authenticate with podio: "+err;
-    });
-});
+    github:octocat/Spoon-Knife
 
+If you want to further filter issues, optionally add any additional tags you want to match on.
+If you don't want Podio to launch a notification, check the "Silent" box. Then hit Submit.
 
-// podio.request('POST', '/item/app/'+process.env.APP_ID+'/filter/', {
-//     filters:{
-//         tags: ['github-test']
-//       }
-//   }).then(function(results){
-//     console.log(results);
-// });
+You'll get back a custom URL to respond to GitHub events. Copy this URL, go into the settings menu
+for your repository on GitHub, select "Webhooks and Services" and then "Add Webhook".
 
-// podio.request('GET', '/comment/item/'+id).then(function(data){ console.log(data);});
+![webhook](images/3.png) ![add webhook](images/4.png)
 
-// for(i=0; i<commentIds.length;i++){
-//   podio.request('DELETE', '/comment/'+commentIds[i]).then(function(data){ console.log(data);});
-// }
-```
+Paste the URL into "Payload URL" and keep the Content type as "application/json". Select
+"Let me select individual events." and check the boxes for "Issues" and "Pull Requests"
+(or just one if you only want one of these). Click "Activate".
+
+![event triggers](images/5.png)
+
+Now you should start receiving notifications in Podio!
