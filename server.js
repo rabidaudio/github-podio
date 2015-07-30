@@ -18,6 +18,7 @@ var app = express();
 app.use(bodyParser.json());
 
 app.post('/github-hook', function(req,res){
+  //issues, pull_request, issue_comment
   if(req.headers['x-github-event'] === 'ping'){
     console.log('Received ping from github');
     console.log(req.body.hook);
