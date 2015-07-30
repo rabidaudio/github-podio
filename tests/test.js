@@ -6,7 +6,7 @@ require('../server.js');
 setTimeout(function(){
 
   request({
-    url: 'http://localhost:8000/github-hook',
+    url: 'http://localhost:8000/app/55ba868622ffd11c23ac6cee/github-hook',
     method: 'POST',
     json: true,
     body: {
@@ -430,4 +430,4 @@ setTimeout(function(){
     console.log(body);
   });
 
-}, 10000);
+}, 100);
