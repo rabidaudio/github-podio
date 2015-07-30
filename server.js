@@ -34,8 +34,11 @@ app.post('/github-hook', function(req,res){
     res.end("OK");
 
   }else if(req.headers['x-github-event'] === 'pull_request'){
-    var comment = comment_template(req.body);
-    console.log(comment);
+    if(req.body.action === "opened"){
+      var comment = comment_template(req.body);
+      console.log(comment);
+    }
+    
     res.end("OK");
 
   }else{
