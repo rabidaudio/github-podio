@@ -13,10 +13,9 @@ future: connect github users to podio accounts
 require('with-env')(); //include environment variables from .env on development
 
 var express = require('express');
-var bodyParser = require('body-parser');
 var _ = require('lodash');
 var Podio = require('podio-js').api;
-var Datastore = require('nedb');
+// var Datastore = require('nedb');
 
 var app = express();
 var podio = new Podio({
@@ -25,8 +24,7 @@ var podio = new Podio({
   clientSecret: process.env.CLIENT_SECRET
 });
 
-app.use(bodyParser.json());
-
+app.use(require('body-parser').json());
 
 var comment_template = _.template("[<%= pull_request.user.login %>](<%= pull_request.user.html_url %>) issued a pull request\n\n"+
       "## [<%= pull_request.title %>](<%= pull_request.html_url %>)\n\n" +
@@ -36,27 +34,41 @@ var comment_template = _.template("[<%= pull_request.user.login %>](<%= pull_req
         "<%= pull_request.additions %>++/<%= pull_request.deletions %>--");
 
 
-app.post('/github-hook', function(req,res){
+app.post('/github-hook', function(req, res){
   //issues, pull_request, issue_comment
   
   if(req.headers['x-github-event'] === 'ping'){
     console.log('Received ping from github');
-    res.end("OK");
+    res.end(res.body.zen);
 
   }else if(req.headers['x-github-event'] === 'pull_request'){
     if(req.body.action === "opened"){
       var comment = comment_template(req.body);
       console.log(comment);
-      // podio.request('POST',  "/comment/{type}/{id}/", {
-      //   value: comment,
-      //   external_id: req.headers['x-github-delivery'],
-
-      // }).then(function(responseData){
-      //   console.log("comment added: "+responseData.comment_id, responseData.ref);
-      //   res.end(responseData.comment_id);
-      // }).catch(function(errBody){
-      //   res.status(500).json(errBody);
-      // });
+      podio.request('POST', '/item/app/'+process.env.APP_ID+'/filter/', {
+        filters:{
+          tags: ['github-test']
+        }
+      }).then(function(results){
+        if(results.filtered<=0){
+          res.status(204).end("Couldn't find an item with the appropriate tag.");
+        }else{
+          _.each(results.items, function(item){
+            podio.request('POST', "/comment/item/"+item.item_id, {
+              value: comment,
+              external_id: req.headers['x-github-delivery'],
+              embed_url: req.body.pull_request.html_url
+            }).then(function(responseData){
+              console.log("comment added: "+responseData);
+              res.end(responseData.comment_id);
+            }).catch(function(errBody){
+              res.status(500).json(errBody);
+            });
+          });
+        }
+      }).catch(function(err){
+        res.status(500).json(err);
+      });
     }
   }else{
     res.status(400).end('This service only listends to pull requests.');
@@ -64,8 +76,11 @@ app.post('/github-hook', function(req,res){
 });
 
 app.get('/', function(req, res){
-  res.end("Hello, world!");
+  res.end("Hello, world!"); //TODO add a form for submitting new hooks
 });
+
+// app.post('/add-hook') //TODO add a way to submit app id and key
+
 
 
 podio.isAuthenticated().then(start).catch(function(err) {
