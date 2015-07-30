@@ -38,12 +38,16 @@ app.post('/github-hook', function(req,res){
       var comment = comment_template(req.body);
       console.log(comment);
     }
-    
+
     res.end("OK");
 
   }else{
     res.status(400).end('This service only listends to pull requests.');
   }
+});
+
+app.get('/', function(req, res){
+  res.end("Hello, world!");
 });
 
 app.listen(process.env.PORT || 8000);
