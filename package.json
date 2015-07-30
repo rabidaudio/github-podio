@@ -1,0 +1,19 @@
+{
+  "name": "github-podio",
+  "version": "0.1.0",
+  "description": "A service to publish git events to Podio",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Charles Julian Knight",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.13.2",
+    "express": "^4.13.1",
+    "podio-js": "^1.2.0"
+  },
+  "devDependencies": {
+    "request": "^2.60.0"
+  }
+}
