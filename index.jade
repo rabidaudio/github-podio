@@ -42,17 +42,18 @@ html(lang="en")
           $.ajax({
             method: 'POST',
             url: '/add-hook',
-            dataType: 'json',
-            data: {
+            // dataType: 'json',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify({
               app_id: $('input[name=app_id]').val(),
               token:  $('input[name=token]').val(),
               tags:   $('input[name=tags]').val().split(",").map(trim),
               silent: !!$('input[name=silent]').checked
-            }
+            })
           }).then(function(data){
             $('pre.result').text(data);
           }, function(jqXHR, textStatus, error){
-            $('pre.result').text(error);
+            $('pre.result').text(jqXHR.responseText);
           });
         });
       });
