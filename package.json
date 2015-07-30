@@ -10,7 +10,9 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.13.2",
+    "chai": "^3.2.0",
     "express": "^4.13.1",
+    "mocha": "^2.2.5",
     "podio-js": "^1.2.0"
   },
   "devDependencies": {
