@@ -1,0 +1,7 @@
+[<%= pull_request.user.login %>](<%= pull_request.user.html_url %>) <%= action %> a pull request
+
+# [<%= pull_request.title %>](<%= pull_request.html_url %>)
+
+<%= pull_request.body %>
+
+> commits: <%= pull_request.commits %>, changed files: <%= pull_request.changed_files %>, <%= pull_request.additions %>++/<%= pull_request.deletions %>--

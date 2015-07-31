@@ -16,6 +16,11 @@ var PodioApp = mongoose.model('PodioApp', new Schema({
 
 module.exports = function(podio, app_id_key){
   return {
+
+    /**
+     *  Take the given app_id and look up app info in database, then use that
+     *  info to authenticate with Podio as that app
+     */
     databaseLookup: function(req, res, next){
       var app_id = req.params.id;
       if(!app_id){
@@ -35,7 +40,7 @@ module.exports = function(podio, app_id_key){
           req.podio_app = data;
           
           //log into podio as app
-          console.log("authenticating with podio as app", data);
+          console.log("authenticating with podio as app", data._id);
           podio.authenticateWithApp(data.app_id, data.token, function(err, data){
             if(err){
               console.error("problem authentiating with podio", err);
@@ -49,6 +54,9 @@ module.exports = function(podio, app_id_key){
       });
     },
 
+    /**
+     * Respond to new app requests (store in database).
+     */
     create: function(req, res){
       var hook = new PodioApp(req.body);
       hook.validate(function(err){

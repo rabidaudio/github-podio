@@ -16,6 +16,7 @@ var jade = require('jade');
 var _ = require('lodash');
 var async = require('async');
 var Podio = require('podio-js').api;
+var templates = require('./templates');
 
 
 var app = express();
@@ -51,17 +52,24 @@ var issue_comment_template = _.template("[<%= issue.user.login %>](<%= issue.use
 //github hook filter
 app.use(function(req, res, next){
 
-    if(req.headers['x-github-event'] === 'pull_request' &&
-      (req.body.action === 'opened' || req.body.action === 'reopened')){
+    var event_type = req.headers['x-github-event'];
+    var action = req.body.action;
 
-        console.log("generating comment");
-        req.generated_comment = pull_request_comment_template(req.body);
+    if(( event_type === 'pull_request' || event_type === 'issues') && (action === 'opened' || action === 'reopened')){
 
-    }else if(req.headers['x-github-event'] === 'issues' &&
-      (req.body.action === 'opened' || req.body.action === 'reopened')){
+      console.log("generating comment");
+      req.comment = {
+        id: req.headers['x-github-delivery'],
+        body: templates[event_type](req.body),
+        primary_tag: "github:"+req.body.repository.full_name.toLowerCase() // all tags on Podio are stored in lowercase
+      };
 
-        console.log("generating comment");
-        req.generated_comment = issue_comment_template(req.body);
+      if(event_type==='issues'){
+        req.comment.url = req.body.issue.html_url; //event is 'issues' but data field is 'issue'
+      }else{
+        req.comment.url = req.body[event_type].html_url;
+      }
+
     }
     next();
 });
@@ -74,56 +82,59 @@ app.post('/app/:id/github-hook', function(req, res){
     return res.end(req.body.zen);
   }
   
-  if(!!req.generated_comment){
 
-    if(!req.podio_app){
-      console.error("podio is not defined");
-      return res.status(500).end("podio is not defined");
-    }
-    
-    podio.request('POST', '/item/app/'+req.podio_app.app_id+'/filter/', {
-      filters:{
-        tags: req.podio_app.tags.concat("github:"+req.body.repository.full_name.toLowerCase())
-      }
-    }).then(function(results){
-      if(results.filtered<=0){
-        console.error("no matching items in app",req.podio_app.tags.concat("github:"+req.body.repository.full_name.toLowerCase()));
-        return res.status(204).end("Couldn't find an item with the appropriate tag.");
-      }else{
-        var commentIds = [];
-        console.log("writing comments to "+results.items.length+" items");
-
-        var comment_data = {
-          value: req.generated_comment,
-          external_id: req.headers['x-github-delivery'],
-          embed_url: (req.body.pull_request ? req.body.pull_request.html_url : req.body.issue.html_url) //todo
-        };
-        
-        async.each(results.items, function(item, callback){
-          podio.request('POST', "/comment/item/"+item.item_id+
-            (req.podio_app.silent ? "?silent=true" : ""), comment_data)
-            .then(function(responseData){
-              console.log("comment added: ", responseData);
-              commentIds.push(responseData.comment_id);
-              callback();
-            }, callback);
-        }, function(err){
-          if(err){
-            console.error("problem writing comment", err);
-            return res.status(500).end(errBody || "An unknown error occured.");
-          }
-          console.log("write complete", commentIds);
-          return res.status(200).end(JSON.stringify(commentIds));
-        });
-      }
-    }, function(err){
-      console.error("problem getting items", err);
-      return res.status(500).end(String(err));
-    });
-
-  }else{
+  if(!req.comment){ //nothing to do
     return res.status(204).end('This service only listends to new pull requests and issues.');
   }
+
+  if(!req.podio_app){
+    return res.status(500).end('Unable to connect to app');
+  }
+  
+  var search_tags = req.podio_app.tags.concat(req.comment.primary_tag); //the saved tags plus the primary tag
+
+  podio.request('POST', '/item/app/'+req.podio_app.app_id+'/filter/', {
+
+    filters:{ tags: search_tags }
+
+  }).then(function(results){
+
+    if(results.filtered <= 0){
+      console.error("no matching items in app", search_tags);
+      return res.status(204).end("Couldn't find an item with the appropriate tags: "+search_tags);
+
+    }else{
+      var commentIds = [];
+      console.log("writing comments to "+results.items.length+" items");
+
+      var comment_data = {
+        value: req.comment.body,
+        external_id: req.comment.id,
+        embed_url: req.comment.url
+      };
+      
+      async.each(results.items, function(item, callback){
+        podio.request('POST', "/comment/item/"+item.item_id+
+          (req.podio_app.silent ? "?silent=true" : ""), comment_data)
+          .then(function(responseData){
+            console.log("comment added: ", responseData);
+            commentIds.push(responseData.comment_id);
+            callback();
+          }, callback);
+        callback();
+      }, function(err){ //on all complete
+        if(err){
+          console.error("problem writing comment", err);
+          return res.status(500).end(errBody || "An unknown error occured.");
+        }
+        console.log("write complete", commentIds);
+        return res.status(200).end(JSON.stringify(commentIds));
+      });
+    }
+  }, function(err){
+    console.error("problem getting items", err);
+    return res.status(500).end(String(err));
+  });
 });
 
 app.use('/images', express.static(__dirname + '/images'));
