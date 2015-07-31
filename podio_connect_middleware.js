@@ -14,6 +14,12 @@ var PodioApp = mongoose.model('PodioApp', new Schema({
   timestamp: { type: Date, default: Date.now }
 }));
 
+var GitHubPodioUser = mongoose.model('GitHubPodioUser', new Schema({
+  github_username: { type: String, required: true, index: true },
+  podio_name: { type: String, required: true },
+  podio_id: { type: String, required: true },
+}));
+
 module.exports = function(podio, app_id_key){
   return {
 
@@ -61,7 +67,7 @@ module.exports = function(podio, app_id_key){
       var hook = new PodioApp(req.body);
       hook.validate(function(err){
         if(err){
-          res.status(400).end(String(err));
+          return res.status(400).end(String(err));
         }else{
           hook.save(function(err){
             if(err){
@@ -76,6 +82,34 @@ module.exports = function(podio, app_id_key){
               }));
             }
           });
+        }
+      });
+    },
+
+    addUser: function(req, res){
+      var user = new GitHubPodioUser(req.body);
+      user.validate(function(err){
+        if(err){
+          return res.status(400).end(String(err));
+        }else{
+          user.save(function(err){
+            if(err){
+              return res.status(400).end(String(err));
+            }else{
+              console.log("added user", user);
+              return res.status(200).end("OK");
+            }
+          });
+        }
+      });
+    },
+
+    getUser: function(github_username, callback){
+      GitHubPodioUser.findOne({ github_username: github_username }, function (err, user) {
+        if(err){
+          callback(null);
+        }else{
+          callback(user);
         }
       });
     }

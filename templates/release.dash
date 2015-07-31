@@ -1,4 +1,4 @@
-[<%= release.author.login %>](<%= release.author.html_url %>) <%= action %> a release.
+[<%= release.author.login %>](<%= release.author.html_url %>)<%= podio_username %> <%= action %> a release.
 
 # <%= repository.name %>: [`<%= release.tag_name %>`<% if(release.name){ %>: <%= release.name %><% } %>](<%= release.html_url %>)
 

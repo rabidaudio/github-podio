@@ -35,6 +35,8 @@ app.use('/app/:id', databaseHandler.databaseLookup);
 
 app.post('/add-hook', databaseHandler.create);
 
+app.post('/add-user', databaseHandler.addUser);
+
 //github hook filter
 app.use(function(req, res, next){
 
@@ -45,20 +47,29 @@ app.use(function(req, res, next){
       || event_type === 'release'){
 
       console.log("generating comment");
-      req.comment = {
-        id: req.headers['x-github-delivery'],
-        body: templates[event_type](req.body),
-        primary_tag: "github:"+req.body.repository.full_name.toLowerCase() // all tags on Podio are stored in lowercase
-      };
+      var data = req.body;
+      
+      databaseHandler.getUser(data.sender.login, function(podio_user){
+        //@[Charles Julian Knight](user:2990084)
+        data.podio_username = (podio_user ? " (@["+podio_user.podio_name+"](user:"+podio_user.podio_id+"))" : "");
+        req.comment = {
+          id: req.headers['x-github-delivery'],
+          body: templates[event_type](data),
+          primary_tag: "github:"+data.repository.full_name.toLowerCase() // all tags on Podio are stored in lowercase
+        };
 
-      if(event_type==='issues'){
-        req.comment.url = req.body.issue.html_url; //event is 'issues' but data field is 'issue'
-      }else{
-        req.comment.url = req.body[event_type].html_url;
-      }
 
+        if(event_type==='issues'){
+          req.comment.url = data.issue.html_url; //event is 'issues' but data field is 'issue'
+        }else{
+          req.comment.url = data[event_type].html_url;
+        }
+        next();
+      });
+
+    }else{
+      next();
     }
-    next();
 });
 
 app.post('/app/:id/github-hook', function(req, res){

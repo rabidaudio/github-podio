@@ -1,4 +1,4 @@
-[<%= issue.user.login %>](<%= issue.user.html_url %>) <%= action %> an issue.
+[<%= issue.user.login %>](<%= issue.user.html_url %>)<%= podio_username %> <%= action %> an issue.
 
 # [<%= issue.title %>](<%= issue.html_url %>)
 
