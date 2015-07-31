@@ -1,0 +1,3 @@
+[<%= issue.user.login %>](<%= issue.user.html_url %>) <%= action %> a release.
+
+# [`<%= release.tag_name %>`<% if(relase.name){ %>: <%= release.name %><% } %>](<%= release.html_url %>)

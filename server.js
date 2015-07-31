@@ -13,7 +13,6 @@ require('with-env')(); //include environment variables from .env on development
 
 var express = require('express');
 var jade = require('jade');
-var _ = require('lodash');
 var async = require('async');
 var Podio = require('podio-js').api;
 var templates = require('./templates');
@@ -36,26 +35,14 @@ app.use('/app/:id', databaseHandler.databaseLookup);
 
 app.post('/add-hook', databaseHandler.create);
 
-
-var pull_request_comment_template = _.template("[<%= pull_request.user.login %>](<%= pull_request.user.html_url %>) <%= action %> a pull request\n\n"+
-      "# [<%= pull_request.title %>](<%= pull_request.html_url %>)\n\n" +
-      "<%= pull_request.body %>\n\n"+
-      "> commits: <%= pull_request.commits %>, "+
-        "changed files: <%= pull_request.changed_files %>, "+
-        "<%= pull_request.additions %>++/<%= pull_request.deletions %>--");
-
-var issue_comment_template = _.template("[<%= issue.user.login %>](<%= issue.user.html_url %>) <%= action %> an issue\n\n"+
-      "# [<%= issue.title %>](<%= issue.html_url %>)\n\n" +
-      "<%= issue.body %>\n\n"+
-      "<% _.forEach(issue.labels, function(label) { %><li>[<%- label.name %>](<%- label.url %>)</li><% }); %>");
-
 //github hook filter
 app.use(function(req, res, next){
 
     var event_type = req.headers['x-github-event'];
     var action = req.body.action;
 
-    if(( event_type === 'pull_request' || event_type === 'issues') && (action === 'opened' || action === 'reopened')){
+    if((( event_type === 'pull_request' || event_type === 'issues') && (action === 'opened' || action === 'reopened'))
+      || event_type === 'release'){
 
       console.log("generating comment");
       req.comment = {
@@ -75,7 +62,6 @@ app.use(function(req, res, next){
 });
 
 app.post('/app/:id/github-hook', function(req, res){
-  //issues, pull_request, release
 
   if(req.headers['x-github-event'] === 'ping'){
     console.log('Received ping from github');
