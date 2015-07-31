@@ -1,3 +1,5 @@
-[<%= issue.user.login %>](<%= issue.user.html_url %>) <%= action %> a release.
+[<%= release.author.login %>](<%= release.author.html_url %>) <%= action %> a release.
 
-# [`<%= release.tag_name %>`<% if(relase.name){ %>: <%= release.name %><% } %>](<%= release.html_url %>)
+# <%= repository.name %>: [`<%= release.tag_name %>`<% if(release.name){ %>: <%= release.name %><% } %>](<%= release.html_url %>)
+
+Published: <%= new Date(release.published_at).toLocaleDateString() %> <%= new Date(release.published_at).toLocaleTimeString() %>
