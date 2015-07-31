@@ -51,7 +51,7 @@ var issue_comment_template = _.template("[<%= issue.user.login %>](<%= issue.use
 app.use(function(req, res, next){
     if(req.headers['x-github-event'] === 'ping'){
       console.log('Received ping from github');
-      res.end(res.body.zen);
+      res.end(req.body.zen);
 
     }else if(req.headers['x-github-event'] === 'pull_request' &&
       (req.body.action === 'opened' || req.body.action === 'reopened')){

@@ -45,7 +45,6 @@ module.exports = function(podio, app_id_key){
     },
 
     create: function(req, res){
-      console.log("recieved body", req.body);
       var hook = new PodioApp(req.body);
       hook.validate(function(err){
         if(err){
@@ -59,7 +58,7 @@ module.exports = function(podio, app_id_key){
               res.json(url.format({
                 protocol: req.protocol,
                 hostname: req.hostname,
-                port: req.app.get('port'),
+                port: (process.env.NODE_ENV==="production" ? null : req.app.get('port')),
                 pathname: "/app/"+hook._id.toString()+"/github-hook"
               }));
             }
