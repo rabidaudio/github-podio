@@ -51,9 +51,27 @@ html(lang="en")
               silent: !!$('input[name=silent]').checked
             })
           }).then(function(data){
-            $('pre.result').text(data);
+            $('pre.hook.result').text(data);
           }, function(jqXHR, textStatus, error){
-            $('pre.result').text(jqXHR.responseText);
+            $('pre.hook.result').text(jqXHR.responseText);
+          });
+        });
+
+        $('#associate').click(function(){
+          $.ajax({
+            method: 'POST',
+            url: '/add-user',
+            // dataType: 'json',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify({
+              github_username: $('input[name=github_username]').val(),
+              podio_name:  $('input[name=podio_name]').val(),
+              podio_id: $('input[name=podio_id]').val()
+            })
+          }).then(function(data){
+            $('pre.user.result').text(data);
+          }, function(jqXHR, textStatus, error){
+            $('pre.user.result').text(jqXHR.responseText);
           });
         });
       });
@@ -71,7 +89,18 @@ html(lang="en")
         input(type="checkbox" name="silent" checked=false)
         | Silence notifications
       input(type="button" value="Generate" id="generate")
-      pre.result
+      pre.hook.result
+    h2 Associate Usernames
+    form
+      p GitHub Username
+      input(type="text" name="github_username")
+      p Podio Name
+      input(type="text" name="podio_name")
+      p Podio User ID
+      input(type="text" name="podio_id")
+      input(type="button" value="Associate" id="associate")
+      pre.user.result
+
 
     h1 Directions
       include:marked README.md
