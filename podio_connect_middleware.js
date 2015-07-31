@@ -1,6 +1,6 @@
 
 var mongoose = require('mongoose');
-
+var _ = require('lodash');
 var url = require('url');
 
 mongoose.connect(process.env.MONGOLAB_URI);
@@ -17,27 +17,32 @@ var PodioApp = mongoose.model('PodioApp', new Schema({
 module.exports = function(podio, app_id_key){
   return {
     databaseLookup: function(req, res, next){
-      var app_id = req.params[app_id_key];
-      if(!app_id || !app_id.match(/$[a-f0-9]+^/)) next();
+      var app_id = req.params.id;
+      if(!app_id){
+        console.log("no app_id");
+        return next();
+      }
       
       PodioApp.findById(app_id, function(err, data){
         if(err){
           console.error("problem connecting to database", err);
-          res.status(500).json(err);
-        }else if(data==null){
-          console.error("couldn't find PodioApp:"+app_id+" in database");
-          res.status(404).end("App not found: "+app_id);
+          return next(err);
+        }else if(data===null||data===undefined){
+          console.error("couldn't find PodioApp: "+app_id+" in database");
+          return next("App not found: "+app_id);
         }else{
+          req.podio_app = {};
           req.podio_app = data;
+          
           //log into podio as app
-          console.log("authenticating with podio as app");
+          console.log("authenticating with podio as app", data);
           podio.authenticateWithApp(data.app_id, data.token, function(err, data){
             if(err){
               console.error("problem authentiating with podio", err);
-              res.status(500).json(err);
+              return next(err);
             }else{
               console.log("authenticated");
-              next();
+              return next();
             }
           });
         }

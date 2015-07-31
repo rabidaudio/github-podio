@@ -47,7 +47,7 @@ html(lang="en")
             data: JSON.stringify({
               app_id: $('input[name=app_id]').val(),
               token:  $('input[name=token]').val(),
-              tags:   $('input[name=tags]').val().split(",").map(trim),
+              tags:   ($('input[name=tags]').val().length==0 ? [] : $('input[name=tags]').val().split(",").map(trim)),
               silent: !!$('input[name=silent]').checked
             })
           }).then(function(data){
